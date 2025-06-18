@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: gerenciadordb-postgres
+    environment:
+      - POSTGRES_DB=gerenciadordb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gerenciadordb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tarefa-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gerenciador-api-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=gerenciadordb;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Issuer=${JWT_ISSUER:-GerenciadorApi}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-GerenciadorClient}
+      - JwtSettings__ExpirationInMinutes=${JWT_EXPIRATION:-60}
+      - Cors__AllowedOrigins__0=${FRONTEND_URL:-http://localhost:3000}
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tarefa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tarefa-network:
+    driver: bridge
