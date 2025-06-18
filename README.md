@@ -123,6 +123,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 
 # Configurações JWT
+No arquivo .env na pasta Solution/src/.env
 JWT_SECRET=2W3Jj4Gd5Lk7Rr8S6t9Zb1XqCk8Yv3F5Zc9J8Rk1Q0N=</br>
 JWT_ISSUER=GerenciadorApi</br>
 JWT_AUDIENCE=GerenciadorClient</br>
